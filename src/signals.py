@@ -37,3 +37,17 @@ STRATEGIES = {
     "mean_reversion": mean_reversion,
     "vol_target": vol_target,
 }
+
+
+def monthly(signal_fn):
+    """Envuelve una estrategia para que cambie de posición solo al cierre de cada mes.
+
+    La señal del último día del calendario (no del último día hábil) se mantiene hasta el
+    mes siguiente: si el mes termina en día hábil, el cambio se registra ese día; si termina
+    en fin de semana, el primer día hábil del mes siguiente. Nunca cambia a mitad de mes.
+    """
+    def wrapped(prices, **kw):
+        sig = signal_fn(prices, **kw)
+        month_end = sig.resample("ME").last()                  # valor al último día de cada mes
+        return month_end.reindex(sig.index, method="ffill")    # se mantiene hasta el mes siguiente
+    return wrapped

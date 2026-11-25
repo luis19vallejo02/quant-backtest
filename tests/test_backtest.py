@@ -80,3 +80,17 @@ def test_walk_forward_ignores_the_future():
     b, _ = walk_forward(px2, STRATEGIES["sma_cross"], grid, **kw)
 
     pd.testing.assert_series_equal(a.loc["2008", "net"], b.loc["2008", "net"])
+
+
+@pytest.mark.parametrize("name", ["sma_cross", "momentum", "mean_reversion", "vol_target"])
+def test_monthly_wrapper_has_no_lookahead_and_changes_only_monthly(name):
+    from src.signals import monthly
+    px = _prices()
+    fn = monthly(STRATEGIES[name])
+    full, trunc = fn(px), fn(px.iloc[:400])
+    pd.testing.assert_frame_equal(full.iloc[:400], trunc)
+    changes = full.diff().abs().sum(axis=1).fillna(0) > 0
+    month = full.index.to_period("M")
+    s = pd.Series(month, index=full.index)
+    edge = (s != s.shift(1)) | (s != s.shift(-1))          # primer o último día hábil del mes
+    assert not (changes & ~edge).any()                     # nunca cambia a mitad de mes

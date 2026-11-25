@@ -23,3 +23,17 @@ def download_prices(tickers=TICKERS, start="2005-01-01", end="2025-12-31",
 def to_returns(prices: pd.DataFrame) -> pd.DataFrame:
     """Retornos simples diarios."""
     return prices.pct_change().dropna(how="all")
+
+
+def download_fx(ticker="MXN=X", start="2005-01-01", end="2025-12-31",
+                cache="data/raw/usdmxn.parquet", refresh=False) -> pd.Series:
+    """Tipo de cambio USD/MXN (pesos por dólar) de Yahoo Finance, con caché local."""
+    path = Path(cache)
+    if path.exists() and not refresh:
+        return pd.read_parquet(path)["USDMXN"]
+    fx = yf.download(ticker, start=start, end=end, auto_adjust=True, progress=False)["Close"].squeeze()
+    fx.index = pd.to_datetime(fx.index).tz_localize(None)
+    fx = fx.sort_index().rename("USDMXN")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fx.to_frame().to_parquet(path)
+    return fx
