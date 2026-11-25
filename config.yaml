@@ -1,0 +1,17 @@
+data:
+  tickers: [SPY, QQQ, TLT, GLD, EEM]
+  start: "2005-01-01"
+  end: "2025-12-31"
+  cache: data/raw/prices.parquet
+backtest:
+  cost_bps: 5.0
+  warmup_days: 260
+walk_forward:
+  train_years: 5
+  test_years: 1
+validation:
+  n_boot: 2000
+  block: 20
+  seed: 42
+outputs:
+  metrics_path: reports/metrics.json
